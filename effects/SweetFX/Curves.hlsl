@@ -5,29 +5,53 @@
  * Curves, uses S-curves to increase contrast, without clipping highlights and shadows.
  */
 
-#include "ReShadeUI.fxh"
+//!MAGPIE EFFECT
+//!VERSION 3
+//!OUTPUT_WIDTH INPUT_WIDTH
+//!OUTPUT_HEIGHT INPUT_HEIGHT
 
-uniform int Mode <
-	ui_type = "combo";
-	ui_items = "Luma\0Chroma\0Both Luma and Chroma\0";
-	ui_tooltip = "Choose what to apply contrast to.";
-> = 0;
-uniform int Formula <
-	ui_type = "combo";
-	ui_items = "Sine\0Abs split\0Smoothstep\0Exp formula\0Simplified Catmull-Rom (0,0,1,1)\0Perlins Smootherstep\0Abs add\0Techicolor Cinestyle\0Parabola\0Half-circles\0Polynomial split\0";
-	ui_tooltip = "The contrast s-curve you want to use. Note that Technicolor Cinestyle is practically identical to Sine, but runs slower. In fact I think the difference might only be due to rounding errors. I prefer 2 myself, but 3 is a nice alternative with a little more effect (but harsher on the highlight and shadows) and it's the fastest formula.";
-> = 4;
+//!PARAMETER
+//!LABEL Mode (Luma | Chroma | Both)
+// Luma, Chroma, Both Luma and Chroma.
+// Choose what to apply contrast to.
+//!DEFAULT 0
+//!MIN 0
+//!MAX 2
+//!STEP 1
+int Mode;
 
-uniform float Contrast < __UNIFORM_SLIDER_FLOAT1
-	ui_min = -1.0; ui_max = 1.0;
-	ui_tooltip = "The amount of contrast you want.";
-> = 0.65;
+//!PARAMETER
+//!LABEL Formula
+// Sine, Abs split, Smoothstep, Exp formula, Simplified Catmull-Rom (0,0,1,1), Perlins Smootherstep, Abs add, Techicolor Cinestyle, Parabola, Half-circles, Polynomial split.
+// The contrast s-curve you want to use. Note that Technicolor Cinestyle is practically identical to Sine, but runs slower. In fact I think the difference might only be due to rounding errors. I prefer 2 myself, but 3 is a nice alternative with a little more effect (but harsher on the highlight and shadows) and it's the fastest formula.
+//!DEFAULT 4
+//!MIN 0
+//!MAX 8
+//!STEP 1
+int Formula;
 
-#include "ReShade.fxh"
+//!PARAMETER
+//!LABEL Contrast
+// The amount of contrast you want.
+//!DEFAULT 0.65
+//!MIN -1.0
+//!MAX 1.0
+//!STEP 0.01
+float Contrast;
 
-float4 CurvesPass(float4 vpos : SV_Position, float2 texcoord : TexCoord) : SV_Target
-{
-	float4 colorInput = tex2D(ReShade::BackBuffer, texcoord);
+//!TEXTURE
+Texture2D INPUT;
+
+//!SAMPLER
+//!FILTER POINT
+SamplerState SamplePoint;
+
+//!PASS 1
+//!DESC Curves, uses S-curves to increase contrast, without clipping highlights and shadows.
+//!STYLE PS
+//!IN INPUT
+float4 Pass1(float2 texcoord) {
+	float4 colorInput = INPUT.SampleLevel(SamplePoint, texcoord, 0);
 	float3 lumCoeff = float3(0.2126, 0.7152, 0.0722);  //Values to calculate luma with
 	float Contrast_blend = Contrast; 
 	const float PI = 3.1415927;
@@ -187,13 +211,4 @@ float4 CurvesPass(float4 vpos : SV_Position, float2 texcoord : TexCoord) : SV_Ta
 	}
 
 	return colorInput;
-}
-
-technique Curves
-{
-	pass
-	{
-		VertexShader = PostProcessVS;
-		PixelShader = CurvesPass;
-	}
 }
