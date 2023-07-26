@@ -1,0 +1,1 @@
+hlsl shaders for [Magpie](https://github.com/Blinue/Magpie).
