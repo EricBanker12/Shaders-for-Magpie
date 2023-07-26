@@ -24,75 +24,73 @@
     * Added the ability to scale and move the layer around on XY axis
 */
 
-#include "ReShade.fxh"
+//!MAGPIE EFFECT
+//!VERSION 3
+//!OUTPUT_WIDTH INPUT_WIDTH
+//!OUTPUT_HEIGHT INPUT_HEIGHT
 
-#ifndef LAYER_SOURCE
-#define LAYER_SOURCE "Layer.png"
-#endif
-#ifndef LAYER_SIZE_X
-#define LAYER_SIZE_X 1280
-#endif
-#ifndef LAYER_SIZE_Y
-#define LAYER_SIZE_Y 720
-#endif
+//!PARAMETER
+//!LABEL Position X-axis
+//!DEFAULT 0.5
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.005
+float Layer_Pos_X;
 
-#if LAYER_SINGLECHANNEL
-    #define TEXFORMAT R8
-#else
-    #define TEXFORMAT RGBA8
-#endif
+//!PARAMETER
+//!LABEL Position Y-axis
+//!DEFAULT 0.5
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.005
+float Layer_Pos_Y;
 
-#include "ReShadeUI.fxh"
+//!PARAMETER
+//!LABEL Scale
+//!DEFAULT 1.0
+//!MIN 0.01
+//!MAX 4.0
+//!STEP 0.005
+float Layer_Scale;
 
-uniform float2 Layer_Pos < __UNIFORM_DRAG_FLOAT2
-    ui_label = "Layer Position";
-    ui_min = 0.0; ui_max = 1.0;
-    ui_step = (1.0 / 200.0);
-> = float2(0.5, 0.5);
+//!PARAMETER
+//!LABEL Blend
+// How much to blend layer with the original image
+//!DEFAULT 1.0
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.005
+float Layer_Blend;
 
-uniform float Layer_Scale < __UNIFORM_DRAG_FLOAT1
-    ui_label = "Layer Scale";
-    ui_min = (1.0 / 100.0); ui_max = 4.0;
-    ui_step = (1.0 / 250.0);
-> = 1.0;
+//!TEXTURE
+Texture2D INPUT;
 
-uniform float Layer_Blend < __UNIFORM_COLOR_FLOAT1
-    ui_label = "Layer Blend";
-    ui_tooltip = "How much to blend layer with the original image.";
-    ui_min = 0.0; ui_max = 1.0;
-    ui_step = (1.0 / 255.0); // for slider and drag
-> = 1.0;
+//!SAMPLER
+//!FILTER POINT
+SamplerState SamplePoint;
 
-texture Layer_Tex <
-    source = LAYER_SOURCE;
-> {
-    Format = TEXFORMAT;
-    Width  = LAYER_SIZE_X;
-    Height = LAYER_SIZE_Y;
-};
+//!TEXTURE
+//!SOURCE Layer.png
+Texture2D Layer;
 
-sampler Layer_Sampler
-{
-    Texture  = Layer_Tex;
-    AddressU = BORDER;
-    AddressV = BORDER;
-};
+//!SAMPLER
+//!FILTER LINEAR
+SamplerState SampleLinear;
 
-void PS_Layer(float4 pos : SV_Position, float2 texCoord : TEXCOORD, out float4 passColor : SV_Target)
-{
-    const float4 backColor = tex2D(ReShade::BackBuffer, texCoord);
-    const float2 pixelSize = 1.0 / (float2(LAYER_SIZE_X, LAYER_SIZE_Y) * Layer_Scale / BUFFER_SCREEN_SIZE);
-    const float4 layer     = tex2D(Layer_Sampler, texCoord * pixelSize + Layer_Pos * (1.0 - pixelSize));
+//!PASS 1
+//!DESC Blends an image with the game.
+//!STYLE PS
+//!IN INPUT, Layer
+float4 Pass1(float2 texCoord) {
+    const float4 backColor = INPUT.SampleLevel(SamplePoint, texCoord, 0);
+    const float2 ScreenSize = float2(GetInputSize());
+    const float2 Layer_Pos = float2(Layer_Pos_X, Layer_Pos_Y);
+    
+    uint LayerSizeX, LayerSizeY;
+    Layer.GetDimensions(LayerSizeX, LayerSizeY);
+    
+    const float2 pixelSize = 1.0 / (float2(LayerSizeX, LayerSizeY) * Layer_Scale / ScreenSize);
+    const float4 layer = Layer.SampleLevel(SampleLinear, texCoord * pixelSize + Layer_Pos * (1.0 - pixelSize), 0);
 
-    passColor   = lerp(backColor, layer, layer.a * Layer_Blend);
-    passColor.a = backColor.a;
-}
-
-technique Layer
-{
-    pass
-    {
-        VertexShader = PostProcessVS;
-        PixelShader  = PS_Layer;
-    }
+    return float4(lerp(backColor.rgb, layer.rgb, layer.a * Layer_Blend), backColor.a);
 }

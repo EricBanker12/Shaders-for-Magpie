@@ -44,7 +44,7 @@ Texture2D INPUT;
 SamplerState SamplePoint;
 
 //!PASS 1
-//!DESC Curves, uses S-curves to increase contrast, without clipping highlights and shadows.
+//!DESC Creates a color overlay to tint the screen.
 //!STYLE PS
 //!IN INPUT
 float3 Pass1(float2 texcoord) {
