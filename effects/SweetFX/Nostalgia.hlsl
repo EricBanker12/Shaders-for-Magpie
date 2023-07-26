@@ -65,7 +65,7 @@ int Nostalgia_scanlines;
 int Nostalgia_color_reduction;
 
 //!PARAMETER
-//!LABEL Linear Color Conversion
+//!LABEL Color Reduction Linear Conversion
 //!DEFAULT 1
 //!MIN 0
 //!MAX 1
@@ -73,7 +73,7 @@ int Nostalgia_color_reduction;
 int LinearColor;
 
 //!PARAMETER
-//!LABEL Dither
+//!LABEL Color Reduction Dither
 //!DEFAULT 0
 //!MIN 0
 //!MAX 1
@@ -489,6 +489,7 @@ SamplerState SampleLinear;
 //!STYLE PS
 //!IN INPUT
 float3 Pass1(float2 texcoord) {
+	int colorCount = 16;
 	float2 ScreenSize = float2(GetInputSize());
 	
 	float3 color = INPUT.SampleLevel(SamplePoint, texcoord, 0).rgb;
@@ -498,22 +499,22 @@ float3 Pass1(float2 texcoord) {
 	{
 		float3 palette[16] = //Custom palette
 		{
-			float3(Nostalgia_color_0_Red, Nostalgia_color_0_Green, Nostalgia_color_0_Blue),
-			float3(Nostalgia_color_1_Red, Nostalgia_color_1_Green, Nostalgia_color_1_Blue),
-			float3(Nostalgia_color_2_Red, Nostalgia_color_2_Green, Nostalgia_color_2_Blue),
-			float3(Nostalgia_color_3_Red, Nostalgia_color_3_Green, Nostalgia_color_3_Blue),
-			float3(Nostalgia_color_4_Red, Nostalgia_color_4_Green, Nostalgia_color_4_Blue),
-			float3(Nostalgia_color_5_Red, Nostalgia_color_5_Green, Nostalgia_color_5_Blue),
-			float3(Nostalgia_color_6_Red, Nostalgia_color_6_Green, Nostalgia_color_6_Blue),
-			float3(Nostalgia_color_7_Red, Nostalgia_color_7_Green, Nostalgia_color_7_Blue),
-			float3(Nostalgia_color_8_Red, Nostalgia_color_8_Green, Nostalgia_color_8_Blue),
-			float3(Nostalgia_color_9_Red, Nostalgia_color_9_Green, Nostalgia_color_9_Blue),
-			float3(Nostalgia_color_10_Red, Nostalgia_color_10_Green, Nostalgia_color_10_Blue),
-			float3(Nostalgia_color_11_Red, Nostalgia_color_11_Green, Nostalgia_color_11_Blue),
-			float3(Nostalgia_color_12_Red, Nostalgia_color_12_Green, Nostalgia_color_12_Blue),
-			float3(Nostalgia_color_13_Red, Nostalgia_color_13_Green, Nostalgia_color_13_Blue),
-			float3(Nostalgia_color_14_Red, Nostalgia_color_14_Green, Nostalgia_color_14_Blue),
-			float3(Nostalgia_color_15_Red, Nostalgia_color_15_Green, Nostalgia_color_15_Blue)
+			float3(Nostalgia_color_0_Red, Nostalgia_color_0_Green, Nostalgia_color_0_Blue) / 255.0,
+			float3(Nostalgia_color_1_Red, Nostalgia_color_1_Green, Nostalgia_color_1_Blue) / 255.0,
+			float3(Nostalgia_color_2_Red, Nostalgia_color_2_Green, Nostalgia_color_2_Blue) / 255.0,
+			float3(Nostalgia_color_3_Red, Nostalgia_color_3_Green, Nostalgia_color_3_Blue) / 255.0,
+			float3(Nostalgia_color_4_Red, Nostalgia_color_4_Green, Nostalgia_color_4_Blue) / 255.0,
+			float3(Nostalgia_color_5_Red, Nostalgia_color_5_Green, Nostalgia_color_5_Blue) / 255.0,
+			float3(Nostalgia_color_6_Red, Nostalgia_color_6_Green, Nostalgia_color_6_Blue) / 255.0,
+			float3(Nostalgia_color_7_Red, Nostalgia_color_7_Green, Nostalgia_color_7_Blue) / 255.0,
+			float3(Nostalgia_color_8_Red, Nostalgia_color_8_Green, Nostalgia_color_8_Blue) / 255.0,
+			float3(Nostalgia_color_9_Red, Nostalgia_color_9_Green, Nostalgia_color_9_Blue) / 255.0,
+			float3(Nostalgia_color_10_Red, Nostalgia_color_10_Green, Nostalgia_color_10_Blue) / 255.0,
+			float3(Nostalgia_color_11_Red, Nostalgia_color_11_Green, Nostalgia_color_11_Blue) / 255.0,
+			float3(Nostalgia_color_12_Red, Nostalgia_color_12_Green, Nostalgia_color_12_Blue) / 255.0,
+			float3(Nostalgia_color_13_Red, Nostalgia_color_13_Green, Nostalgia_color_13_Blue) / 255.0,
+			float3(Nostalgia_color_14_Red, Nostalgia_color_14_Green, Nostalgia_color_14_Blue) / 255.0,
+			float3(Nostalgia_color_15_Red, Nostalgia_color_15_Green, Nostalgia_color_15_Blue) / 255.0
 		};
 
 		if (Nostalgia_palette == 1) //C64 palette from http://www.c64-wiki.com/index.php/Color
@@ -752,8 +753,7 @@ float3 Pass1(float2 texcoord) {
 			palette[11] = float3(0.513725490196078,0.152941176470588,0.564705882352941);
 			palette[12] = float3(0.717647058823529,0,0.819607843137255);
 			palette[13] = float3(0.0196078431372549,0.0509803921568627,0.407843137254902);
-			palette[14] = palette[0];
-			palette[15] = palette[0];
+			colorCount = 14;
 		}
 		
 		if (Nostalgia_palette == 13) // Gameboy
@@ -762,18 +762,7 @@ float3 Pass1(float2 texcoord) {
 			palette[1] = float3(0.607843137254902,0.737254901960784,0.0588235294117647);
 			palette[2] = float3(0.188235294117647,0.384313725490196,0.188235294117647);
 			palette[3] = float3(0.545098039215686,0.674509803921569,0.0588235294117647);
-			palette[4] = palette[0];
-			palette[5] = palette[0];
-			palette[6] = palette[0];
-			palette[7] = palette[0];
-			palette[8] = palette[0];
-			palette[9] = palette[0];
-			palette[10] = palette[0];
-			palette[11] = palette[0];
-			palette[12] = palette[0];
-			palette[13] = palette[0];
-			palette[14] = palette[0];
-			palette[15] = palette[0];
+			colorCount = 4;
 		}
 
 
@@ -828,7 +817,7 @@ float3 Pass1(float2 texcoord) {
 		float closest_dist = dist; //this has to be the closest distance so far as it's the first we have checked
 		float3 closest_color = palette[0]; //and closest color so far is this one
 
-		for (int i = 1 ; i < 16 ; i++) //for colors 0 to 15
+		for (int i = 1 ; i < colorCount ; i++) //for colors 1 to colorCount
 		{
 			diff = color - palette[i]; //find the difference in color
 		
