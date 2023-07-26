@@ -4,23 +4,64 @@
  * Optimized by CeeJay.dk
  */
 
-#include "ReShadeUI.fxh"
+//!MAGPIE EFFECT
+//!VERSION 3
+//!OUTPUT_WIDTH INPUT_WIDTH
+//!OUTPUT_HEIGHT INPUT_HEIGHT
 
-uniform float Power < __UNIFORM_SLIDER_FLOAT1
-	ui_min = 0.0; ui_max = 8.0;
-> = 4.0;
-uniform float3 RGBNegativeAmount < __UNIFORM_COLOR_FLOAT3
-> = float3(0.88, 0.88, 0.88);
+//!PARAMETER
+//!LABEL Power
+//!DEFAULT 4.0
+//!MIN 0.0
+//!MAX 8.0
+//!STEP 0.01
+float Power;
 
-uniform float Strength < __UNIFORM_SLIDER_FLOAT1
-	ui_min = 0.0; ui_max = 1.0;
-	ui_tooltip = "Adjust the strength of the effect.";
-> = 0.4;
+//!PARAMETER
+//!LABEL RGB Negative Amount (Red)
+//!DEFAULT 0.88
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float RGBNegativeAmountRed;
 
-#include "ReShade.fxh"
+//!PARAMETER
+//!LABEL RGB Negative Amount (Green)
+//!DEFAULT 0.88
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float RGBNegativeAmountGreen;
 
-float3 TechnicolorPass(float4 vpos : SV_Position, float2 texcoord : TexCoord) : SV_Target
-{
+//!PARAMETER
+//!LABEL RGB Negative Amount (Blue)
+//!DEFAULT 0.88
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float RGBNegativeAmountBlue;
+
+//!PARAMETER
+//!LABEL Strength
+// Adjust the strength of the effect
+//!DEFAULT 0.4
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float Strength;
+
+//!TEXTURE
+Texture2D INPUT;
+
+//!SAMPLER
+//!FILTER POINT
+SamplerState SamplePoint;
+
+//!PASS 1
+//!DESC Desaturates colors for technicolor effect.
+//!STYLE PS
+//!IN INPUT
+float3 Pass1(float2 texcoord) {
 	const float3 cyanfilter = float3(0.0, 1.30, 1.0);
 	const float3 magentafilter = float3(1.0, 0.0, 1.05);
 	const float3 yellowfilter = float3(1.6, 1.6, 0.05);
@@ -28,23 +69,14 @@ float3 TechnicolorPass(float4 vpos : SV_Position, float2 texcoord : TexCoord) : 
 	const float2 greenfilter = float2(0.30, 1.0);       // RG_
 	const float2 magentafilter2 = magentafilter.rb;     // R_B
 
-	float3 tcol = tex2D(ReShade::BackBuffer, texcoord).rgb;
+	float3 tcol = INPUT.SampleLevel(SamplePoint, texcoord, 0).rgb;
 	
-	float2 negative_mul_r = tcol.rg * (1.0 / (RGBNegativeAmount.r * Power));
-	float2 negative_mul_g = tcol.rg * (1.0 / (RGBNegativeAmount.g * Power));
-	float2 negative_mul_b = tcol.rb * (1.0 / (RGBNegativeAmount.b * Power));
+	float2 negative_mul_r = tcol.rg * (1.0 / (RGBNegativeAmountRed * Power));
+	float2 negative_mul_g = tcol.rg * (1.0 / (RGBNegativeAmountGreen * Power));
+	float2 negative_mul_b = tcol.rb * (1.0 / (RGBNegativeAmountBlue * Power));
 	float3 output_r = dot(redorangefilter, negative_mul_r).xxx + cyanfilter;
 	float3 output_g = dot(greenfilter, negative_mul_g).xxx + magentafilter;
 	float3 output_b = dot(magentafilter2, negative_mul_b).xxx + yellowfilter;
 
 	return lerp(tcol, output_r * output_g * output_b, Strength);
-}
-
-technique Technicolor
-{
-	pass
-	{
-		VertexShader = PostProcessVS;
-		PixelShader = TechnicolorPass;
-	}
 }

@@ -4,31 +4,78 @@
  * Optimized by CeeJay.dk
  */
 
-#include "ReShadeUI.fxh"
+//!MAGPIE EFFECT
+//!VERSION 3
+//!OUTPUT_WIDTH INPUT_WIDTH
+//!OUTPUT_HEIGHT INPUT_HEIGHT
 
-uniform float3 ColorStrength < __UNIFORM_COLOR_FLOAT3
-	ui_tooltip = "Higher means darker and more intense colors.";
-> = float3(0.2, 0.2, 0.2);
+//!PARAMETER
+//!LABEL Color Strength (Red)
+// Higher means darker and more intense colors.
+//!DEFAULT 0.2
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float ColorStrengthRed;
 
-uniform float Brightness < __UNIFORM_SLIDER_FLOAT1
-	ui_min = 0.5; ui_max = 1.5;
-	ui_tooltip = "Higher means brighter image.";
-> = 1.0;
-uniform float Saturation < __UNIFORM_SLIDER_FLOAT1
-	ui_min = 0.0; ui_max = 1.5;
-	ui_tooltip = "Additional saturation control since this effect tends to oversaturate the image.";
-> = 1.0;
+//!PARAMETER
+//!LABEL Color Strength (Green)
+// Higher means darker and more intense colors.
+//!DEFAULT 0.2
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float ColorStrengthGreen;
 
-uniform float Strength < __UNIFORM_SLIDER_FLOAT1
-	ui_min = 0.0; ui_max = 1.0;
-	ui_tooltip = "Adjust the strength of the effect.";
-> = 1.0;
+//!PARAMETER
+//!LABEL Color Strength (Blue)
+// Higher means darker and more intense colors.
+//!DEFAULT 0.2
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float ColorStrengthBlue;
 
-#include "ReShade.fxh"
+//!PARAMETER
+//!LABEL Brightness
+// Higher means brighter image.
+//!DEFAULT 1.0
+//!MIN 0.5
+//!MAX 1.5
+//!STEP 0.01
+float Brightness;
 
-float3 TechnicolorPass(float4 vpos : SV_Position, float2 texcoord : TexCoord) : SV_Target
-{
-	float3 color = saturate(tex2D(ReShade::BackBuffer, texcoord).rgb);
+//!PARAMETER
+//!LABEL Saturation
+// Additional saturation control since this effect tends to oversaturate the image.
+//!DEFAULT 1.0
+//!MIN 0.0
+//!MAX 1.5
+//!STEP 0.01
+float Saturation;
+
+//!PARAMETER
+//!LABEL Saturation
+// Adjust the strength of the effect.
+//!DEFAULT 1.0
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float Strength;
+
+//!TEXTURE
+Texture2D INPUT;
+
+//!SAMPLER
+//!FILTER POINT
+SamplerState SamplePoint;
+
+//!PASS 1
+//!DESC Saturates colors for technicolor effect.
+//!STYLE PS
+//!IN INPUT
+float3 Pass1(float2 texcoord) {
+	float3 color = INPUT.SampleLevel(SamplePoint, texcoord, 0).rgb;
 	
 	float3 temp = 1.0 - color;
 	float3 target = temp.grg;
@@ -36,7 +83,7 @@ float3 TechnicolorPass(float4 vpos : SV_Position, float2 texcoord : TexCoord) : 
 	float3 temp2 = color * target;
 	temp2 *= target2;
 
-	temp = temp2 * ColorStrength;
+	temp = temp2 * float3(ColorStrengthRed, ColorStrengthGreen, ColorStrengthBlue);
 	temp2 *= Brightness;
 
 	target = temp.grg;
@@ -50,13 +97,4 @@ float3 TechnicolorPass(float4 vpos : SV_Position, float2 texcoord : TexCoord) : 
 	color = lerp(dot(color, 0.333), color, Saturation);
 
 	return color;
-}
-
-technique Technicolor2
-{
-	pass
-	{
-		VertexShader = PostProcessVS;
-		PixelShader = TechnicolorPass;
-	}
 }
