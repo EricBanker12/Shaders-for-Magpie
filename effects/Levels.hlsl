@@ -2,6 +2,8 @@
  * Levels version 1.2
  * by Christian Cann Schuldt Jensen ~ CeeJay.dk
  *
+ * Ported to Magpie by Eric Banker ~ Kourinn
+ *
  * Allows you to set a new black and a white level.
  * This increases contrast, but clips any colors outside the new range to either black or white
  * and so some details in the shadows or highlights can be lost.
@@ -18,41 +20,64 @@
  * Added the ability to highlight clipping regions of the image with #define HighlightClipping 1
  */
 
-#include "ReShadeUI.fxh"
+//!MAGPIE EFFECT
+//!VERSION 3
+//!OUTPUT_WIDTH INPUT_WIDTH
+//!OUTPUT_HEIGHT INPUT_HEIGHT
 
-uniform int BlackPoint < __UNIFORM_SLIDER_INT1
-	ui_min = 0; ui_max = 255;
-	ui_label = "Black Point";
-	ui_tooltip = "The black point is the new black - literally. Everything darker than this will become completely black.";
-> = 16;
+//!PARAMETER
+//!LABEL Black Point
+// The black point is the new black - literally. Everything darker than this will become completely black.
+//!DEFAULT 16
+//!MIN 0
+//!MAX 255
+//!STEP 1
+int BlackPoint;
 
-uniform int WhitePoint < __UNIFORM_SLIDER_INT1
-	ui_min = 0; ui_max = 255;
-	ui_label = "White Point";
-	ui_tooltip = "The new white point. Everything brighter than this becomes completely white";
-> = 235;
+//!PARAMETER
+//!LABEL White Point
+// The new white point. Everything brighter than this becomes completely white.
+//!DEFAULT 235
+//!MIN 0
+//!MAX 255
+//!STEP 1
+int WhitePoint;
 
-uniform bool HighlightClipping <
-	ui_label = "Highlight clipping pixels";
-	ui_tooltip = "Colors between the two points will stretched, which increases contrast, but details above and below the points are lost (this is called clipping).\n"
-		"This setting marks the pixels that clip.\n"
-		"Red: Some detail is lost in the highlights\n"
-		"Yellow: All detail is lost in the highlights\n"
-		"Blue: Some detail is lost in the shadows\n"
-		"Cyan: All detail is lost in the shadows.";
-> = false;
+//!PARAMETER
+//!LABEL Highlight Clipping pixels
+// Colors between the two points will stretched, which increases contrast, but details above and below the points are lost (this is called clipping).
+// This setting marks the pixels that clip.
+// Red: Some detail is lost in the highlights.
+// Yellow: All detail is lost in the highlights.
+// Blue: Some detail is lost in the shadows.
+// Cyan: All detail is lost in the shadows.
+//!DEFAULT 0
+//!MIN 0
+//!MAX 1
+//!STEP 1
+int HighlightClipping;
 
-#include "ReShade.fxh"
+//!TEXTURE
+Texture2D INPUT;
 
-float3 LevelsPass(float4 vpos : SV_Position, float2 texcoord : TexCoord) : SV_Target
-{
+//!SAMPLER
+//!FILTER POINT
+SamplerState SamplePoint;
+
+//!PASS 1
+//!DESC Allows you to set a new black and a white level. This increases contrast, but clips any colors outside the new range to either black or white and so some details in the shadows or highlights can be lost.
+// You can use a PS-like style, but it will still be implemented with CS.
+// The default value of "STYLE" is "CS".
+//!STYLE PS
+//!IN INPUT
+float3 Pass1(float2 texcoord) {
 	float black_point_float = BlackPoint / 255.0;
 	float white_point_float = WhitePoint == BlackPoint ? (255.0 / 0.00025) : (255.0 / (WhitePoint - BlackPoint)); // Avoid division by zero if the white and black point are the same
 
-	float3 color = tex2D(ReShade::BackBuffer, texcoord).rgb;
+	float3 color = INPUT.SampleLevel(SamplePoint, texcoord, 0).rgb;
 	color = color * white_point_float - (black_point_float *  white_point_float);
 
-	if (HighlightClipping)
+	if (HighlightClipping == 1)
 	{
 		float3 clipped_colors;
 
@@ -73,13 +98,4 @@ float3 LevelsPass(float4 vpos : SV_Position, float2 texcoord : TexCoord) : SV_Ta
 	}
 
 	return color;
-}
-
-technique Levels
-{
-	pass
-	{
-		VertexShader = PostProcessVS;
-		PixelShader = LevelsPass;
-	}
 }
