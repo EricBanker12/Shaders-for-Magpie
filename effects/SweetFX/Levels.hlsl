@@ -66,8 +66,6 @@ SamplerState SamplePoint;
 
 //!PASS 1
 //!DESC Allows you to set a new black and a white level. This increases contrast, but clips any colors outside the new range to either black or white and so some details in the shadows or highlights can be lost.
-// You can use a PS-like style, but it will still be implemented with CS.
-// The default value of "STYLE" is "CS".
 //!STYLE PS
 //!IN INPUT
 float3 Pass1(float2 texcoord) {
