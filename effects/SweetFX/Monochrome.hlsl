@@ -86,7 +86,7 @@ Texture2D INPUT;
 SamplerState SamplePoint;
 
 //!PASS 1
-//!DESC Distorts the image by shifting each color component, which creates color artifacts similar to those in a very cheap lens or a cheap sensor.
+//!DESC Removes color making everything monochrome.
 //!STYLE PS
 //!IN INPUT
 float3 Pass1(float2 texcoord) {

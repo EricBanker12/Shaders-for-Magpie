@@ -2,6 +2,8 @@
  * Curves
  * by Christian Cann Schuldt Jensen ~ CeeJay.dk
  *
+ * Ported to Magpie by Eric Banker ~ Kourinn
+ *
  * Curves, uses S-curves to increase contrast, without clipping highlights and shadows.
  */
 

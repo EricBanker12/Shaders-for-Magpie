@@ -79,7 +79,7 @@ Texture2D INPUT;
 SamplerState SamplePoint;
 
 //!PASS 1
-//!DESC Distorts the image by shifting each color component, which creates color artifacts similar to those in a very cheap lens or a cheap sensor.
+//!DESC Creates a border around top/bottom or sides of the window.
 //!STYLE PS
 //!IN INPUT
 float3 Pass1(float2 texcoord) {
