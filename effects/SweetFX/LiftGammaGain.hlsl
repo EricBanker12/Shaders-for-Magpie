@@ -95,10 +95,6 @@ Texture2D INPUT;
 //!FILTER POINT
 SamplerState SamplePoint;
 
-//!SAMPLER
-//!FILTER LINEAR
-SamplerState SampleLinear;
-
 //!PASS 1
 //!DESC Distorts the image by shifting each color component, which creates color artifacts similar to those in a very cheap lens or a cheap sensor.
 //!STYLE PS

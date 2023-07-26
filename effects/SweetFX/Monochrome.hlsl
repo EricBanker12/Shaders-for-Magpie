@@ -32,64 +32,71 @@
 
 */
 
+//!MAGPIE EFFECT
+//!VERSION 3
+//!OUTPUT_WIDTH INPUT_WIDTH
+//!OUTPUT_HEIGHT INPUT_HEIGHT
 
-/*---------------.
-| :: Includes :: |
-'---------------*/
+//!PARAMETER
+//!LABEL Preset
+// Custom, Monitor or modern TV,  Equal weight,  Agfa 200X,  Agfapan 25,  Agfapan 100,  Agfapan 400,  Ilford Delta 100,  Ilford Delta 400,  Ilford Delta 400 Pro & 3200,  Ilford FP4,  Ilford HP5,  Ilford Pan F,  Ilford SFX,  Ilford XP2 Super,  Kodak Tmax 100,  Kodak Tmax 400,  Kodak Tri-X
+//!DEFAULT 0
+//!MIN 0
+//!MAX 17
+//!STEP 1
+int Monochrome_preset;
 
-#include "ReShade.fxh"
-#include "ReShadeUI.fxh"
+//!PARAMETER
+//!LABEL Custom Conversion (Red)
+//!DEFAULT 0.21
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float Monochrome_conversion_Red;
 
-uniform int Monochrome_preset <
-	ui_type = "combo";
-	ui_label = "Preset";
-	ui_tooltip = "Choose a preset";
-	//ui_category = "";
-	ui_items = "Custom\0"
-	"Monitor or modern TV\0"
-	"Equal weight\0"
-	"Agfa 200X\0"
-	"Agfapan 25\0"
-	"Agfapan 100\0"
-	"Agfapan 400\0"
-	"Ilford Delta 100\0"
-	"Ilford Delta 400\0"
-	"Ilford Delta 400 Pro & 3200\0"
-	"Ilford FP4\0"
-	"Ilford HP5\0"
-	"Ilford Pan F\0"
-	"Ilford SFX\0"
-	"Ilford XP2 Super\0"
-	"Kodak Tmax 100\0"
-	"Kodak Tmax 400\0"
-	"Kodak Tri-X\0";
-> = 0;
+//!PARAMETER
+//!LABEL Custom Conversion (Green)
+//!DEFAULT 0.72
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float Monochrome_conversion_Green;
 
-uniform float3 Monochrome_conversion_values < __UNIFORM_COLOR_FLOAT3
-	ui_label = "Custom Conversion values";
-> = float3(0.21, 0.72, 0.07);
+//!PARAMETER
+//!LABEL Custom Conversion (Blue)
+//!DEFAULT 0.07
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float Monochrome_conversion_Blue;
 
-/*
-uniform bool Normalize <
-	ui_label = "Normalize";
-	ui_tooltip = "Normalize the coefficients?";
-> = false;
-*/
+//!PARAMETER
+//!LABEL Saturation
+//!DEFAULT 0.0
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float Monochrome_color_saturation;
 
-uniform float Monochrome_color_saturation < __UNIFORM_SLIDER_FLOAT1
-	ui_label = "Saturation";
-	ui_min = 0.0; ui_max = 1.0;
-> = 0.0;
+//!TEXTURE
+Texture2D INPUT;
 
-float3 MonochromePass(float4 vpos : SV_Position, float2 texcoord : TexCoord) : SV_Target
-{
-	float3 color = tex2D(ReShade::BackBuffer, texcoord).rgb;
+//!SAMPLER
+//!FILTER POINT
+SamplerState SamplePoint;
+
+//!PASS 1
+//!DESC Distorts the image by shifting each color component, which creates color artifacts similar to those in a very cheap lens or a cheap sensor.
+//!STYLE PS
+//!IN INPUT
+float3 Pass1(float2 texcoord) {
+	float3 color = INPUT.SampleLevel(SamplePoint, texcoord, 0).rgb;
 
 	float3 Coefficients = float3(0.21, 0.72, 0.07);
 
 	float3 Coefficients_array[18] = 
 	{
-		Monochrome_conversion_values, //Custom
+		float3(Monochrome_conversion_Red, Monochrome_conversion_Green, Monochrome_conversion_Blue), //Custom
 		float3(0.21, 0.72, 0.07), //sRGB monitor
 		float3(0.3333333, 0.3333334, 0.3333333), //Equal weight
 		float3(0.18, 0.41, 0.41), //Agfa 200X
@@ -119,13 +126,4 @@ float3 MonochromePass(float4 vpos : SV_Position, float2 texcoord : TexCoord) : S
 
 	// Return the result
 	return saturate(color);
-}
-
-technique Monochrome
-{
-	pass
-	{
-		VertexShader = PostProcessVS;
-		PixelShader = MonochromePass;
-	}
 }
