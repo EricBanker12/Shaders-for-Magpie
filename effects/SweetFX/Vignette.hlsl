@@ -2,42 +2,95 @@
  * Vignette version 1.3
  * by Christian Cann Schuldt Jensen ~ CeeJay.dk
  *
+ * Ported to Magpie by Eric Banekr ~ Kourinn
+ *
  * Darkens the edges of the image to make it look more like it was shot with a camera lens.
  * May cause banding artifacts.
  */
 
-#include "ReShadeUI.fxh"
+//!MAGPIE EFFECT
+//!VERSION 3
+//!OUTPUT_WIDTH INPUT_WIDTH
+//!OUTPUT_HEIGHT INPUT_HEIGHT
 
-uniform int Type <
-	ui_type = "combo";
-	ui_items = "Original\0New\0TV style\0Untitled 1\0Untitled 2\0Untitled 3\0Untitled 4\0";
-> = 0;
-uniform float Ratio < __UNIFORM_SLIDER_FLOAT1
-	ui_min = 0.15; ui_max = 6.0;
-	ui_tooltip = "Sets a width to height ratio. 1.00 (1/1) is perfectly round, while 1.60 (16/10) is 60 % wider than it's high.";
-> = 1.0;
-uniform float Radius < __UNIFORM_SLIDER_FLOAT1
-	ui_min = -1.0; ui_max = 3.0;
-	ui_tooltip = "lower values = stronger radial effect from center";
-> = 2.0;
-uniform float Amount < __UNIFORM_SLIDER_FLOAT1
-	ui_min = -2.0; ui_max = 1.0;
-	ui_tooltip = "Strength of black. -2.00 = Max Black, 1.00 = Max White.";
-> = -1.0;
-uniform int Slope < __UNIFORM_SLIDER_INT1
-	ui_min = 2; ui_max = 16;
-	ui_tooltip = "How far away from the center the change should start to really grow strong (odd numbers cause a larger fps drop than even numbers).";
-> = 2;
-uniform float2 Center < __UNIFORM_SLIDER_FLOAT2
-	ui_min = 0.0; ui_max = 1.0;
-	ui_tooltip = "Center of effect for 'Original' vignette type. 'New' and 'TV style' do not obey this setting.";
-> = float2(0.5, 0.5);
+//!PARAMETER
+//!LABEL Type
+// 0: Original, 1: New, 2: TV style, 3: Untitled 1, 4: Untitled 2, 5: Untitled 3, 6: Untitled 4
+//!DEFAULT 0
+//!MIN 0
+//!MAX 6
+//!STEP 1
+int Type;
 
-#include "ReShade.fxh"
+//!PARAMETER
+//!LABEL Ratio
+// Sets a width to height ratio. 1.00 (1/1) is perfectly round, while 1.60 (16/10) is 60 % wider than it's high.
+//!DEFAULT 1.0
+//!MIN 0.15
+//!MAX 6.0
+//!STEP 0.01
+float Ratio;
 
-float4 VignettePass(float4 vpos : SV_Position, float2 tex : TexCoord) : SV_Target
-{
-	float4 color = tex2D(ReShade::BackBuffer, tex);
+//!PARAMETER
+//!LABEL Radius
+// lower values = stronger radial effect from center.
+//!DEFAULT 2.0
+//!MIN -1.0
+//!MAX 3.0
+//!STEP 0.01
+float Radius;
+
+//!PARAMETER
+//!LABEL Amount
+// Strength of black. -2.00 = Max Black, 1.00 = Max White.
+//!DEFAULT -1.0
+//!MIN -2.0
+//!MAX 1.0
+//!STEP 0.01
+float Amount;
+
+//!PARAMETER
+//!LABEL Slope
+// How far away from the center the change should start to really grow strong (odd numbers cause a larger fps drop than even numbers).
+//!DEFAULT 2
+//!MIN 2
+//!MAX 16
+//!STEP 1
+int Slope;
+
+//!PARAMETER
+//!LABEL Center X-axis
+// Center of effect for 'Original' vignette type. 'New' and 'TV style' do not obey this setting.
+//!DEFAULT 0.5
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float CenterX;
+
+//!PARAMETER
+//!LABEL Center Y-axis
+// Center of effect for 'Original' vignette type. 'New' and 'TV style' do not obey this setting.
+//!DEFAULT 0.5
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float CenterY;
+
+//!TEXTURE
+Texture2D INPUT;
+
+//!SAMPLER
+//!FILTER POINT
+SamplerState SamplePoint;
+
+//!PASS 1
+//!DESC Darkens the edges of the image to make it look more like it was shot with a camera lens. May cause banding artifacts.
+//!STYLE PS
+//!IN INPUT
+float4 Pass1(float2 tex) {
+	float4 color = INPUT.SampleLevel(SamplePoint, tex, 0);
+	float2 Center = float2(CenterX, CenterY);
+	float2 texSize = GetInputPt();
 
 	if (Type == 0)
 	{
@@ -45,7 +98,7 @@ float4 VignettePass(float4 vpos : SV_Position, float2 tex : TexCoord) : SV_Targe
 		float2 distance_xy = tex - Center;
 
 		// Adjust the ratio
-		distance_xy *= float2((BUFFER_RCP_HEIGHT / BUFFER_RCP_WIDTH), Ratio);
+		distance_xy *= float2((texSize.y / texSize.x), Ratio);
 
 		// Calculate the distance
 		distance_xy /= Radius;
@@ -58,7 +111,7 @@ float4 VignettePass(float4 vpos : SV_Position, float2 tex : TexCoord) : SV_Targe
 	if (Type == 1) // New round (-x*x+x) + (-y*y+y) method.
 	{
 		tex = -tex * tex + tex;
-		color.rgb = saturate(((BUFFER_RCP_HEIGHT / BUFFER_RCP_WIDTH)*(BUFFER_RCP_HEIGHT / BUFFER_RCP_WIDTH) * Ratio * tex.x + tex.y) * 4.0) * color.rgb;
+		color.rgb = saturate(((texSize.y / texSize.x)*(texSize.y / texSize.x) * Ratio * tex.x + tex.y) * 4.0) * color.rgb;
 	}
 
 	if (Type == 2) // New (-x*x+x) * (-y*y+y) TV style method.
@@ -103,13 +156,4 @@ float4 VignettePass(float4 vpos : SV_Position, float2 tex : TexCoord) : SV_Targe
 	}
 
 	return color;
-}
-
-technique Vignette
-{
-	pass
-	{
-		VertexShader = PostProcessVS;
-		PixelShader = VignettePass;
-	}
 }
