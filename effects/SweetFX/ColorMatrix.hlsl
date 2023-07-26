@@ -2,49 +2,126 @@
  * Color Matrix version 1.0
  * by Christian Cann Schuldt Jensen ~ CeeJay.dk
  *
+ * Ported to Magpie by Eric Banker ~ Kourinn
+ *
  * ColorMatrix allow the user to transform the colors using a color matrix
  */
 
-#include "ReShadeUI.fxh"
+//!MAGPIE EFFECT
+//!VERSION 3
+//!OUTPUT_WIDTH INPUT_WIDTH
+//!OUTPUT_HEIGHT INPUT_HEIGHT
 
-uniform float3 ColorMatrix_Red < __UNIFORM_SLIDER_FLOAT3
-	ui_min = 0.0; ui_max = 1.0;
-	ui_label = "Matrix Red";
-	ui_tooltip = "How much of a red, green and blue tint the new red value should contain. Should sum to 1.0 if you don't wish to change the brightness.";
-> = float3(0.817, 0.183, 0.000);
-uniform float3 ColorMatrix_Green < __UNIFORM_SLIDER_FLOAT3
-	ui_min = 0.0; ui_max = 1.0;
-	ui_label = "Matrix Green";
-	ui_tooltip = "How much of a red, green and blue tint the new green value should contain. Should sum to 1.0 if you don't wish to change the brightness.";
-> = float3(0.333, 0.667, 0.000);
-uniform float3 ColorMatrix_Blue < __UNIFORM_SLIDER_FLOAT3
-	ui_min = 0.0; ui_max = 1.0;
-	ui_label = "Matrix Blue";
-	ui_tooltip = "How much of a red, green and blue tint the new blue value should contain. Should sum to 1.0 if you don't wish to change the brightness.";
-> = float3(0.000, 0.125, 0.875);
+//!PARAMETER
+//!LABEL Matrix Red To Red
+// How much of a red, green and blue tint the new red value should contain. Should sum to 1.0 if you don't wish to change the brightness.
+//!DEFAULT 0.82
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float ColorMatrix_Red_Red;
 
-uniform float Strength < __UNIFORM_SLIDER_FLOAT1
-	ui_min = 0.0; ui_max = 1.0;
-	ui_tooltip = "Adjust the strength of the effect.";
-> = 1.0;
+//!PARAMETER
+//!LABEL Matrix Green To Red
+// How much of a red, green and blue tint the new red value should contain. Should sum to 1.0 if you don't wish to change the brightness.
+//!DEFAULT 0.18
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float ColorMatrix_Green_Red;
 
-#include "ReShade.fxh"
+//!PARAMETER
+//!LABEL Matrix Blue To Red
+// How much of a red, green and blue tint the new red value should contain. Should sum to 1.0 if you don't wish to change the brightness.
+//!DEFAULT 0.0
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float ColorMatrix_Blue_Red;
 
-float3 ColorMatrixPass(float4 position : SV_Position, float2 texcoord : TexCoord) : SV_Target
-{
-	float3 color = tex2D(ReShade::BackBuffer, texcoord).rgb;
+//!PARAMETER
+//!LABEL Matrix Red To Green
+// How much of a red, green and blue tint the new red value should contain. Should sum to 1.0 if you don't wish to change the brightness.
+//!DEFAULT 0.33
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float ColorMatrix_Red_Green;
 
-	const float3x3 ColorMatrix = float3x3(ColorMatrix_Red, ColorMatrix_Green, ColorMatrix_Blue);
+//!PARAMETER
+//!LABEL Matrix Green To Green
+// How much of a red, green and blue tint the new red value should contain. Should sum to 1.0 if you don't wish to change the brightness.
+//!DEFAULT 0.67
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float ColorMatrix_Green_Green;
+
+//!PARAMETER
+//!LABEL Matrix Blue To Green
+// How much of a red, green and blue tint the new red value should contain. Should sum to 1.0 if you don't wish to change the brightness.
+//!DEFAULT 0.0
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float ColorMatrix_Blue_Green;
+
+//!PARAMETER
+//!LABEL Matrix Red To Blue
+// How much of a red, green and blue tint the new red value should contain. Should sum to 1.0 if you don't wish to change the brightness.
+//!DEFAULT 0.0
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float ColorMatrix_Red_Blue;
+
+//!PARAMETER
+//!LABEL Matrix Green To Blue
+// How much of a red, green and blue tint the new red value should contain. Should sum to 1.0 if you don't wish to change the brightness.
+//!DEFAULT 0.13
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float ColorMatrix_Green_Blue;
+
+//!PARAMETER
+//!LABEL Matrix Blue To Blue
+// How much of a red, green and blue tint the new red value should contain. Should sum to 1.0 if you don't wish to change the brightness.
+//!DEFAULT 0.87
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float ColorMatrix_Blue_Blue;
+
+//!PARAMETER
+//!LABEL Strength
+// Adjust the strength of the effect.
+//!DEFAULT 1.0
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float Strength;
+
+//!TEXTURE
+Texture2D INPUT;
+
+//!SAMPLER
+//!FILTER POINT
+SamplerState SamplePoint;
+
+//!PASS 1
+//!DESC ColorMatrix allow the user to transform the colors using a color matrix.
+//!STYLE PS
+//!IN INPUT
+float3 Pass1(float2 texcoord) {
+	float3 color = INPUT.SampleLevel(SamplePoint, texcoord, 0).rgb;
+
+	const float3x3 ColorMatrix = float3x3(
+		float3(ColorMatrix_Red_Red, ColorMatrix_Green_Red, ColorMatrix_Blue_Red),
+		float3(ColorMatrix_Red_Green, ColorMatrix_Green_Green, ColorMatrix_Blue_Green),
+		float3(ColorMatrix_Red_Blue, ColorMatrix_Green_Blue, ColorMatrix_Blue_Blue)
+	);
 	color = lerp(color, mul(ColorMatrix, color), Strength);
 
 	return saturate(color);
-}
-
-technique ColorMatrix
-{
-	pass
-	{
-		VertexShader = PostProcessVS;
-		PixelShader = ColorMatrixPass;
-	}
 }
