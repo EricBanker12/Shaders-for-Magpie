@@ -2,37 +2,66 @@
  * FilmGrain version 1.0
  * by Christian Cann Schuldt Jensen ~ CeeJay.dk
  *
+ * Ported to Magpie by Eric Banker ~ Kourinn
+ *
  * Computes a noise pattern and blends it with the image to create a film grain look.
  */
 
-#include "ReShadeUI.fxh"
+//!MAGPIE EFFECT
+//!VERSION 3
+//!OUTPUT_WIDTH INPUT_WIDTH
+//!OUTPUT_HEIGHT INPUT_HEIGHT
+//!USE_DYNAMIC
 
-uniform float Intensity < __UNIFORM_SLIDER_FLOAT1
-	ui_min = 0.0; ui_max = 1.0;
-	ui_tooltip = "How visible the grain is. Higher is more visible.";
-> = 0.50;
-uniform float Variance < __UNIFORM_SLIDER_FLOAT1
-	ui_min = 0.0; ui_max = 1.0;
-	ui_tooltip = "Controls the variance of the Gaussian noise. Lower values look smoother.";
-> = 0.40;
-uniform float Mean < __UNIFORM_SLIDER_FLOAT1
-	ui_min = 0.0; ui_max = 1.0;
-	ui_tooltip = "Affects the brightness of the noise.";
-> = 0.5;
+//!PARAMETER
+//!LABEL Intensity
+// How visible the grain is. Higher is more visible.
+//!DEFAULT 0.5
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float Intensity;
 
-uniform int SignalToNoiseRatio < __UNIFORM_SLIDER_INT1
-	ui_min = 0; ui_max = 16;
-	ui_label = "Signal-to-Noise Ratio";
-	ui_tooltip = "Higher Signal-to-Noise Ratio values give less grain to brighter pixels. 0 disables this feature.";
-> = 6;
+//!PARAMETER
+//!LABEL Variance
+// Controls the variance of the Gaussian noise. Lower values look smoother.
+//!DEFAULT 0.4
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float Variance;
 
-uniform float Timer < source = "timer"; >;
+//!PARAMETER
+//!LABEL Mean
+// Affects the brightness of the noise.
+//!DEFAULT 0.5
+//!MIN 0.0
+//!MAX 1.0
+//!STEP 0.01
+float Mean;
 
-#include "ReShade.fxh"
+//!PARAMETER
+//!LABEL Signal-to-Noise Ratio
+// Higher Signal-to-Noise Ratio values give less grain to brighter pixels. 0 disables this feature.
+//!DEFAULT 6
+//!MIN 0
+//!MAX 16
+//!STEP 1
+int SignalToNoiseRatio;
 
-float3 FilmGrainPass(float4 vpos : SV_Position, float2 texcoord : TexCoord) : SV_Target
-{
-	float3 color = tex2D(ReShade::BackBuffer, texcoord).rgb;
+//!TEXTURE
+Texture2D INPUT;
+
+//!SAMPLER
+//!FILTER POINT
+SamplerState SamplePoint;
+
+//!PASS 1
+//!DESC Computes a noise pattern and blends it with the image to create a film grain look.
+//!STYLE PS
+//!IN INPUT
+float3 Pass1(float2 texcoord) {
+	float3 color = INPUT.SampleLevel(SamplePoint, texcoord, 0).rgb;
   
 	//float inv_luma = dot(color, float3(-0.2126, -0.7152, -0.0722)) + 1.0;
 	float inv_luma = dot(color, float3(-1.0/3.0, -1.0/3.0, -1.0/3.0)) + 1.0; //Calculate the inverted luma so it can be used later to control the variance of the grain
@@ -44,7 +73,8 @@ float3 FilmGrainPass(float4 vpos : SV_Position, float2 texcoord : TexCoord) : SV
 	const float PI = 3.1415927;
 	
 	//time counter using requested counter from ReShade
-	float t = Timer * 0.0022337;
+	// Magpie only has frame count, not elapsed time in milliseconds, so I rescaled this for frametime at 60 fps
+	float t = GetFrameCount() * 0.03722833;
 	
 	//PRNG 2D - create two uniform noise values and save one DP2ADD
 	float seed = dot(texcoord, float2(12.9898, 78.233));// + t;
@@ -54,7 +84,7 @@ float3 FilmGrainPass(float4 vpos : SV_Position, float2 texcoord : TexCoord) : SV
 	float uniform_noise2 = frac(cosine * 53758.5453 - t); // and it doesn't cost any extra ASM
 
 	//Get settings
-	float stn = SignalToNoiseRatio != 0 ? pow(abs(inv_luma), (float)SignalToNoiseRatio) : 1.0; // Signal to noise feature - Brighter pixels get less noise.
+	float stn = SignalToNoiseRatio != 0 ? pow(abs(inv_luma), float(SignalToNoiseRatio)) : 1.0; // Signal to noise feature - Brighter pixels get less noise.
 	float variance = (Variance*Variance) * stn;
 	float mean = Mean;
 
@@ -92,13 +122,4 @@ float3 FilmGrainPass(float4 vpos : SV_Position, float2 texcoord : TexCoord) : SV
 	//color.rgb = (gauss_noise1 > 0.999) ? float3(1.0,1.0,0.0) : 0.0 ; //does it reach 1.0?
 	
 	return color.rgb;
-}
-
-technique FilmGrain
-{
-	pass
-	{
-		VertexShader = PostProcessVS;
-		PixelShader = FilmGrainPass;
-	}
 }
