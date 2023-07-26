@@ -43,213 +43,477 @@
 	* Added scanlines
 */
 
+//!MAGPIE EFFECT
+//!VERSION 3
+//!OUTPUT_WIDTH INPUT_WIDTH
+//!OUTPUT_HEIGHT INPUT_HEIGHT
 
-/*---------------.
-| :: Includes :: |
-'---------------*/
+//!PARAMETER
+//!LABEL Scanlines
+//!DEFAULT 1
+//!MIN 0
+//!MAX 2
+//!STEP 1
+int Nostalgia_scanlines;
 
-#include "ReShade.fxh"
-#include "ReShadeUI.fxh"
+//!PARAMETER
+//!LABEL Color Reduction
+//!DEFAULT 1
+//!MIN 0
+//!MAX 1
+//!STEP 1
+int Nostalgia_color_reduction;
 
-/*--------------.
-| :: Defines :: |
-'--------------*/
+//!PARAMETER
+//!LABEL Linear Color Conversion
+//!DEFAULT 1
+//!MIN 0
+//!MAX 1
+//!STEP 1
+int LinearColor;
 
-#ifndef Nostalgia_linear
-	#define Nostalgia_linear 1
-#endif
+//!PARAMETER
+//!LABEL Dither
+//!DEFAULT 0
+//!MIN 0
+//!MAX 1
+//!STEP 1
+int Nostalgia_dither;
 
-/*------------------.
-| :: UI Settings :: |
-'------------------*/
+//!PARAMETER
+//!LABEL Color Reduction Palette
+// Custom, C64 palette, EGA palette, IBMPC palette, ZXSpectrum palette, AppleII palette, NTSC palette, Commodore VIC-20, MSX Systems, Thomson MO5, Amstrad CPC, Atari ST, Mattel Aquarius, Gameboy, Aek16 palette
+//!DEFAULT 0
+//!MIN 0
+//!MAX 14
+//!STEP 1
+int Nostalgia_palette;
 
-uniform int Nostalgia_scanlines
-<
-	ui_type = "combo";
-	ui_label = "Scanlines";
-	ui_items = 
-	"None\0"
-	"Type 1\0"
-	"Type 2\0";
-	//ui_category = "";
-> = 1;
+//!PARAMETER
+//!LABEL Custom Palette Color 0 (Red)
+//!DEFAULT 0.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_0_Red;
 
-uniform int Nostalgia_color_reduction
-<
-	ui_type = "combo";
-	ui_label = "Color reduction type";
-	//ui_tooltip = "Choose a color reduction type";
-	//ui_category = "";
-	ui_items = 
-	"None\0"
-	"Palette\0"
-	//"Quantize\0"
-	;
-> = 1;
+//!PARAMETER
+//!LABEL Custom Palette Color 0 (Green)
+//!DEFAULT 0.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_0_Green;
 
-uniform bool Nostalgia_dither 
-<
-	ui_label = "Dither";
-> = 0;
+//!PARAMETER
+//!LABEL Custom Palette Color 0 (Blue)
+//!DEFAULT 0.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_0_Blue;
 
-uniform int Nostalgia_palette <
-	ui_type = "combo";
-	ui_label = "Palette";
-	ui_tooltip = "Choose a palette";
-	//ui_category = "";
-	ui_items = 
-	"Custom\0"
-	"C64 palette\0"
-	"EGA palette\0"
-	"IBMPC palette\0"
-	"ZXSpectrum palette\0"
-	"AppleII palette\0"
-	"NTSC palette\0"
-	"Commodore VIC-20\0"
-	"MSX Systems\0"
-	"Thomson MO5\0"
-	"Amstrad CPC\0"
-	"Atari ST\0"
-	"Mattel Aquarius\0"
-	"Gameboy\0"
-	"Aek16 palette";
-> = 0;
+//!PARAMETER
+//!LABEL Custom Palette Color 1 (Red)
+//!DEFAULT 255.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_1_Red;
 
-uniform float3 Nostalgia_color_0 < __UNIFORM_COLOR_FLOAT3
-	ui_label = "Color 0";
-	ui_category = "Custom palette";
-> = float3(  0. ,   0. ,   0. ); //Black;
+//!PARAMETER
+//!LABEL Custom Palette Color 1 (Green)
+//!DEFAULT 255.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_1_Green;
 
-uniform float3 Nostalgia_color_1 < __UNIFORM_COLOR_FLOAT3
-	ui_label = "Color 1";
-	ui_category = "Custom palette"; > 
-= float3(255. , 255. , 255. ) / 255.; //White
+//!PARAMETER
+//!LABEL Custom Palette Color 1 (Blue)
+//!DEFAULT 255.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_1_Blue;
 
-uniform float3 Nostalgia_color_2 < __UNIFORM_COLOR_FLOAT3
-	ui_label = "Color 2";
-	ui_category = "Custom palette";
-> = float3(136. ,   0. ,   0. ) / 255.; //Red;
+//!PARAMETER
+//!LABEL Custom Palette Color 2 (Red)
+//!DEFAULT 136.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_2_Red;
 
-uniform float3 Nostalgia_color_3 < __UNIFORM_COLOR_FLOAT3
-	ui_label = "Color 3";
-	ui_category = "Custom palette";
-> = float3(170. , 255. , 238. ) / 255.; //Cyan
+//!PARAMETER
+//!LABEL Custom Palette Color 2 (Green)
+//!DEFAULT 0.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_2_Green;
 
-uniform float3 Nostalgia_color_4 < __UNIFORM_COLOR_FLOAT3
-	ui_label = "Color 4";
-	ui_category = "Custom palette";
-> = float3(204. ,  68. , 204. ) / 255.; //Violet
+//!PARAMETER
+//!LABEL Custom Palette Color 2 (Blue)
+//!DEFAULT 0.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_2_Blue;
 
-uniform float3 Nostalgia_color_5 < __UNIFORM_COLOR_FLOAT3
-	ui_label = "Color 5";
-	ui_category = "Custom palette";
-> = float3(  0. , 204. ,  85. ) / 255.; //Green
+//!PARAMETER
+//!LABEL Custom Palette Color 3 (Red)
+//!DEFAULT 170.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_3_Red;
 
-uniform float3 Nostalgia_color_6 < __UNIFORM_COLOR_FLOAT3
-	ui_label = "Color 6";
-	ui_category = "Custom palette";
-> = float3(  0. ,   0. , 170. ) / 255.; //Blue
+//!PARAMETER
+//!LABEL Custom Palette Color 3 (Green)
+//!DEFAULT 255.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_3_Green;
 
-uniform float3 Nostalgia_color_7 < __UNIFORM_COLOR_FLOAT3
-	ui_label = "Color 7";
-	ui_category = "Custom palette";
-> = float3(238. , 238. , 119. ) / 255.; //Yellow 1
+//!PARAMETER
+//!LABEL Custom Palette Color 3 (Blue)
+//!DEFAULT 238.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_3_Blue;
 
-uniform float3 Nostalgia_color_8 < __UNIFORM_COLOR_FLOAT3
-	ui_label = "Color 8";
-	ui_category = "Custom palette";
-> = float3(221. , 136. ,  85. ) / 255.; //Orange
+//!PARAMETER
+//!LABEL Custom Palette Color 4 (Red)
+//!DEFAULT 204.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_4_Red;
 
-uniform float3 Nostalgia_color_9 < __UNIFORM_COLOR_FLOAT3
-	ui_label = "Color 9";
-	ui_category = "Custom palette";
-> = float3(102. ,  68. ,   0. ) / 255.; //Brown
+//!PARAMETER
+//!LABEL Custom Palette Color 4 (Green)
+//!DEFAULT 68.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_4_Green;
 
-uniform float3 Nostalgia_color_10 < __UNIFORM_COLOR_FLOAT3
-	ui_label = "Color 10";
-	ui_category = "Custom palette";
-> = float3(255. , 119. , 119. ) / 255.; //Yellow 2
+//!PARAMETER
+//!LABEL Custom Palette Color 4 (Blue)
+//!DEFAULT 204.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_4_Blue;
 
-uniform float3 Nostalgia_color_11 < __UNIFORM_COLOR_FLOAT3
-	ui_label = "Color 11";
-	ui_category = "Custom palette";
-> = float3( 51. ,  51. ,  51. ) / 255.; //Grey 1
+//!PARAMETER
+//!LABEL Custom Palette Color 5 (Red)
+//!DEFAULT 0.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_5_Red;
 
-uniform float3 Nostalgia_color_12 < __UNIFORM_COLOR_FLOAT3
-	ui_label = "Color 12";
-	ui_category = "Custom palette";
-> = float3(119. , 119. , 119. ) / 255.; //Grey 2
+//!PARAMETER
+//!LABEL Custom Palette Color 5 (Green)
+//!DEFAULT 204.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_5_Green;
 
-uniform float3 Nostalgia_color_13 < __UNIFORM_COLOR_FLOAT3
-	ui_label = "Color 13";
-	ui_category = "Custom palette";
-> = float3(170. , 255. , 102. ) / 255.; //Lightgreen
+//!PARAMETER
+//!LABEL Custom Palette Color 5 (Blue)
+//!DEFAULT 85.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_5_Blue;
 
-uniform float3 Nostalgia_color_14 < __UNIFORM_COLOR_FLOAT3
-	ui_label = "Color 14";
-	ui_category = "Custom palette";
-> = float3(  0. , 136. , 255. ) / 255.; //Lightblue
+//!PARAMETER
+//!LABEL Custom Palette Color 6 (Red)
+//!DEFAULT 0.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_6_Red;
 
-uniform float3 Nostalgia_color_15 < __UNIFORM_COLOR_FLOAT3
-	ui_label = "Color 15";
-	ui_category = "Custom palette";
-> = float3(187. , 187. , 187. ) / 255.;  //Grey 3
+//!PARAMETER
+//!LABEL Custom Palette Color 6 (Green)
+//!DEFAULT 0.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_6_Green;
 
-/*
-uniform bool Nostalgia_linear //Can't currently make a UI setting for this since I need the preprocessor for that and it does not accept uniforms from the UI
-<
-	ui_label = "Linear";
-	//ui_category = "Color options";
-> = 0;
-*/
+//!PARAMETER
+//!LABEL Custom Palette Color 6 (Blue)
+//!DEFAULT 170.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_6_Blue;
 
-/*--------------.
-| :: Sampler :: |
-'--------------*/
+//!PARAMETER
+//!LABEL Custom Palette Color 7 (Red)
+//!DEFAULT 238.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_7_Red;
 
-sampler Linear
-{
-	Texture = ReShade::BackBufferTex;
-	SRGBTexture = true;
-};
+//!PARAMETER
+//!LABEL Custom Palette Color 7 (Green)
+//!DEFAULT 238.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_7_Green;
 
+//!PARAMETER
+//!LABEL Custom Palette Color 7 (Blue)
+//!DEFAULT 119.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_7_Blue;
 
-/*-------------.
-| :: Effect :: |
-'-------------*/
+//!PARAMETER
+//!LABEL Custom Palette Color 8 (Red)
+//!DEFAULT 221.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_8_Red;
 
-float3 PS_Nostalgia(float4 vpos : SV_Position, float2 texcoord : TEXCOORD) : SV_Target
-{
-	float3 color;
-	int colorCount = 16;
+//!PARAMETER
+//!LABEL Custom Palette Color 8 (Green)
+//!DEFAULT 136.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_8_Green;
 
-	#if Nostalgia_linear == 1
-		color = tex2D(Linear, texcoord.xy).rgb;
-	#else
-		color = tex2D(ReShade::BackBuffer, texcoord.xy).rgb;
-	#endif
+//!PARAMETER
+//!LABEL Custom Palette Color 8 (Blue)
+//!DEFAULT 85.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_8_Blue;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 9 (Red)
+//!DEFAULT 102.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_9_Red;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 9 (Green)
+//!DEFAULT 68.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_9_Green;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 9 (Blue)
+//!DEFAULT 0.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_9_Blue;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 10 (Red)
+//!DEFAULT 255.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_10_Red;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 10 (Green)
+//!DEFAULT 119.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_10_Green;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 10 (Blue)
+//!DEFAULT 119.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_10_Blue;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 11 (Red)
+//!DEFAULT 51.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_11_Red;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 11 (Green)
+//!DEFAULT 51.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_11_Green;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 11 (Blue)
+//!DEFAULT 51.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_11_Blue;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 12 (Red)
+//!DEFAULT 119.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_12_Red;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 12 (Green)
+//!DEFAULT 119.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_12_Green;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 12 (Blue)
+//!DEFAULT 119.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_12_Blue;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 13 (Red)
+//!DEFAULT 170.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_13_Red;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 13 (Green)
+//!DEFAULT 255.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_13_Green;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 13 (Blue)
+//!DEFAULT 102.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_13_Blue;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 14 (Red)
+//!DEFAULT 0.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_14_Red;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 14 (Green)
+//!DEFAULT 136.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_14_Green;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 14 (Blue)
+//!DEFAULT 255.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_14_Blue;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 15 (Red)
+//!DEFAULT 187.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_15_Red;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 15 (Green)
+//!DEFAULT 187.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_15_Green;
+
+//!PARAMETER
+//!LABEL Custom Palette Color 15 (Blue)
+//!DEFAULT 187.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float Nostalgia_color_15_Blue;
+
+//!TEXTURE
+Texture2D INPUT;
+
+//!SAMPLER
+//!FILTER POINT
+SamplerState SamplePoint;
+
+//!SAMPLER
+//!FILTER LINEAR
+SamplerState SampleLinear;
+
+//!PASS 1
+//!DESC In this effect I try to recreate the looks of systems from a bygone era. I've started with reducing the color to that of systems with 16 color palette.
+//!STYLE PS
+//!IN INPUT
+float3 Pass1(float2 texcoord) {
+	float2 ScreenSize = float2(GetInputSize());
 	
+	float3 color = INPUT.SampleLevel(SamplePoint, texcoord, 0).rgb;
+	if (LinearColor == 1) color = (color <= 0.04045) ? (color / 12.92) : pow(abs(color + 0.055) / 1.055, 2.4);
 
-	if (Nostalgia_color_reduction)
+	if (Nostalgia_color_reduction == 1)
 	{
 		float3 palette[16] = //Custom palette
 		{
-			Nostalgia_color_0,
-			Nostalgia_color_1,
-			Nostalgia_color_2,
-			Nostalgia_color_3,
-			Nostalgia_color_4,
-			Nostalgia_color_5,
-			Nostalgia_color_6,
-			Nostalgia_color_7,
-			Nostalgia_color_8,
-			Nostalgia_color_9,
-			Nostalgia_color_10,
-			Nostalgia_color_11,
-			Nostalgia_color_12,
-			Nostalgia_color_13,
-			Nostalgia_color_14,
-			Nostalgia_color_15
+			float3(Nostalgia_color_0_Red, Nostalgia_color_0_Green, Nostalgia_color_0_Blue),
+			float3(Nostalgia_color_1_Red, Nostalgia_color_1_Green, Nostalgia_color_1_Blue),
+			float3(Nostalgia_color_2_Red, Nostalgia_color_2_Green, Nostalgia_color_2_Blue),
+			float3(Nostalgia_color_3_Red, Nostalgia_color_3_Green, Nostalgia_color_3_Blue),
+			float3(Nostalgia_color_4_Red, Nostalgia_color_4_Green, Nostalgia_color_4_Blue),
+			float3(Nostalgia_color_5_Red, Nostalgia_color_5_Green, Nostalgia_color_5_Blue),
+			float3(Nostalgia_color_6_Red, Nostalgia_color_6_Green, Nostalgia_color_6_Blue),
+			float3(Nostalgia_color_7_Red, Nostalgia_color_7_Green, Nostalgia_color_7_Blue),
+			float3(Nostalgia_color_8_Red, Nostalgia_color_8_Green, Nostalgia_color_8_Blue),
+			float3(Nostalgia_color_9_Red, Nostalgia_color_9_Green, Nostalgia_color_9_Blue),
+			float3(Nostalgia_color_10_Red, Nostalgia_color_10_Green, Nostalgia_color_10_Blue),
+			float3(Nostalgia_color_11_Red, Nostalgia_color_11_Green, Nostalgia_color_11_Blue),
+			float3(Nostalgia_color_12_Red, Nostalgia_color_12_Green, Nostalgia_color_12_Blue),
+			float3(Nostalgia_color_13_Red, Nostalgia_color_13_Green, Nostalgia_color_13_Blue),
+			float3(Nostalgia_color_14_Red, Nostalgia_color_14_Green, Nostalgia_color_14_Blue),
+			float3(Nostalgia_color_15_Red, Nostalgia_color_15_Green, Nostalgia_color_15_Blue)
 		};
 
 		if (Nostalgia_palette == 1) //C64 palette from http://www.c64-wiki.com/index.php/Color
@@ -488,7 +752,8 @@ float3 PS_Nostalgia(float4 vpos : SV_Position, float2 texcoord : TEXCOORD) : SV_
 			palette[11] = float3(0.513725490196078,0.152941176470588,0.564705882352941);
 			palette[12] = float3(0.717647058823529,0,0.819607843137255);
 			palette[13] = float3(0.0196078431372549,0.0509803921568627,0.407843137254902);
-			colorCount = 14;
+			palette[14] = palette[0];
+			palette[15] = palette[0];
 		}
 		
 		if (Nostalgia_palette == 13) // Gameboy
@@ -497,7 +762,18 @@ float3 PS_Nostalgia(float4 vpos : SV_Position, float2 texcoord : TEXCOORD) : SV_
 			palette[1] = float3(0.607843137254902,0.737254901960784,0.0588235294117647);
 			palette[2] = float3(0.188235294117647,0.384313725490196,0.188235294117647);
 			palette[3] = float3(0.545098039215686,0.674509803921569,0.0588235294117647);
-			colorCount = 4;
+			palette[4] = palette[0];
+			palette[5] = palette[0];
+			palette[6] = palette[0];
+			palette[7] = palette[0];
+			palette[8] = palette[0];
+			palette[9] = palette[0];
+			palette[10] = palette[0];
+			palette[11] = palette[0];
+			palette[12] = palette[0];
+			palette[13] = palette[0];
+			palette[14] = palette[0];
+			palette[15] = palette[0];
 		}
 
 
@@ -527,7 +803,7 @@ float3 PS_Nostalgia(float4 vpos : SV_Position, float2 texcoord : TEXCOORD) : SV_
 		{
 		
 			//Calculate grid position
-			float grid_position = frac(dot(texcoord, BUFFER_SCREEN_SIZE * 0.5) + 0.25); //returns 0.25 and 0.75
+			float grid_position = frac(dot(texcoord, ScreenSize * 0.5) + 0.25); //returns 0.25 and 0.75
 	
 			//Calculate how big the shift should be
 			float dither_shift = (0.25) * (1.0 / (pow(2,2.0) - 1.0)); // 0.25 seems good both when using math and when eyeballing it. So does 0.75 btw.
@@ -552,7 +828,7 @@ float3 PS_Nostalgia(float4 vpos : SV_Position, float2 texcoord : TEXCOORD) : SV_
 		float closest_dist = dist; //this has to be the closest distance so far as it's the first we have checked
 		float3 closest_color = palette[0]; //and closest color so far is this one
 
-		for (int i = 1 ; i < colorCount ; i++) //for colors 1 to colorCount
+		for (int i = 1 ; i < 16 ; i++) //for colors 0 to 15
 		{
 			diff = color - palette[i]; //find the difference in color
 		
@@ -570,33 +846,15 @@ float3 PS_Nostalgia(float4 vpos : SV_Position, float2 texcoord : TEXCOORD) : SV_
 
 	if (Nostalgia_scanlines == 1)
 	{
-		color *= frac(texcoord.y * (BUFFER_HEIGHT * 0.5)) + 0.5; //Scanlines
+		color *= frac(texcoord.y * (ScreenSize.y * 0.5)) + 0.5; //Scanlines
 	}
 	if (Nostalgia_scanlines == 2)
 	{
 		float grey  = dot(color,float(1.0/3.0));
-		color = (frac(texcoord.y * (BUFFER_HEIGHT * 0.5)) < 0.25) ? color : color * ((-grey*grey+grey+grey) * 0.5 + 0.5);
+		color = (frac(texcoord.y * (ScreenSize.y * 0.5)) < 0.25) ? color : color * ((-grey*grey+grey+grey) * 0.5 + 0.5);
 	}
+
+    if (LinearColor == 1) color = (color <= 0.0031308) ? (color * 12.92) : (1.055 * pow(abs(color), 1.0 / 2.4) - 0.055);
 
 	return color; //return the pixel
-}
-
-
-/*----------------.
-| :: Technique :: |
-'----------------*/
-
-technique Nostalgia
-{
-	pass NostalgiaPass
-	{
-		VertexShader = PostProcessVS;
-		PixelShader = PS_Nostalgia;
-		
-		#if Nostalgia_linear == 1
-			SRGBWriteEnable = true;
-		#endif	
-		
-		ClearRenderTargets = false;
-	}
 }
