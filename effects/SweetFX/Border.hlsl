@@ -15,59 +15,89 @@
  * Cleaned up setting for Reshade 3.x
  */
 
-#include "ReShade.fxh"
-#include "ReShadeUI.fxh"
+//!MAGPIE EFFECT
+//!VERSION 3
+//!OUTPUT_WIDTH INPUT_WIDTH
+//!OUTPUT_HEIGHT INPUT_HEIGHT
 
-/*
-uniform float2 border_width <
-	ui_type = "input";
-	ui_label = "Size";
-	ui_tooltip = "Measured in pixels. If this is set to zero then the ratio will be used instead.";
-> = float2(0.0, 0.0);
-*/
+//!PARAMETER
+//!LABEL Border Width (Pixels)
+// Measured in pixels. If this is set to zero then the ratio will be used instead.
+//!DEFAULT 0.0
+//!MIN 0.0
+//!MAX 1000.0
+//!STEP 5.0
+float border_width;
 
-uniform float2 border_width <
-	ui_type = "drag";
-	ui_label = "Size";
-	ui_tooltip = "Measured in pixels. If this is set to zero then the ratio will be used instead.";
-	ui_min = 0.0; ui_max = (BUFFER_WIDTH * 0.5);
-	ui_step = 1.0;
-	> = float2(0.0, 0.0);
+//!PARAMETER
+//!LABEL Border Height (Pixels)
+// Measured in pixels. If this is set to zero then the ratio will be used instead.
+//!DEFAULT 0.0
+//!MIN 0.0
+//!MAX 1000.0
+//!STEP 5.0
+float border_height;
 
-uniform float border_ratio <
-	ui_type = "input";
-	ui_label = "Size Ratio";
-	ui_tooltip = "Set the desired ratio for the visible area.";
-> = 2.35;
+//!PARAMETER
+//!LABEL Border Size (Aspect Ratio)
+// Set the desired ratio for the visible area.
+//!DEFAULT 2.35
+//!MIN 0.25
+//!MAX 4.0
+//!STEP 0.01
+float border_ratio;
 
-uniform float3 border_color <
-	ui_type = "color";
-	ui_label = "Border Color";
-> = float3(0.0, 0.0, 0.0);
+//!PARAMETER
+//!LABEL Border Color (Red)
+//!DEFAULT 0.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float border_color_Red;
 
-float3 BorderPass(float4 vpos : SV_Position, float2 texcoord : TexCoord) : SV_Target
-{
-	float3 color = tex2D(ReShade::BackBuffer, texcoord).rgb;
+//!PARAMETER
+//!LABEL Border Color (Green)
+//!DEFAULT 0.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float border_color_Green;
+
+//!PARAMETER
+//!LABEL Border Color (Blue)
+//!DEFAULT 0.0
+//!MIN 0.0
+//!MAX 255.0
+//!STEP 1.0
+float border_color_Blue;
+
+//!TEXTURE
+Texture2D INPUT;
+
+//!SAMPLER
+//!FILTER POINT
+SamplerState SamplePoint;
+
+//!PASS 1
+//!DESC Distorts the image by shifting each color component, which creates color artifacts similar to those in a very cheap lens or a cheap sensor.
+//!STYLE PS
+//!IN INPUT
+float3 Pass1(float2 texcoord) {
+	float3 color = INPUT.SampleLevel(SamplePoint, texcoord, 0).rgb;
+	float3 border_color = float3(border_color_Red, border_color_Green, border_color_Blue) / 255.0;
+	float2 inputSize = float2(GetInputSize());
+	float2 pixSize = GetInputPt();
 
 	// -- calculate the right border_width for a given border_ratio --
-	float2 border_width_variable = border_width;
-	if (border_width.x == -border_width.y) // If width is not used
-		if (BUFFER_ASPECT_RATIO < border_ratio)
-			border_width_variable = float2(0.0, (BUFFER_HEIGHT - (BUFFER_WIDTH / border_ratio)) * 0.5);
+	float2 border_width_variable = float2(border_width, border_height);
+	if (border_width == -border_height) // If width is not used
+		if (inputSize.x / inputSize.y < border_ratio)
+			border_width_variable = float2(0.0, (inputSize.y - (inputSize.x / border_ratio)) * 0.5);
 		else
-			border_width_variable = float2((BUFFER_WIDTH - (BUFFER_HEIGHT * border_ratio)) * 0.5, 0.0);
+			border_width_variable = float2((inputSize.x - (inputSize.y * border_ratio)) * 0.5, 0.0);
 
-	float2 border = (BUFFER_PIXEL_SIZE * border_width_variable); // Translate integer pixel width to floating point
+	float2 border = (pixSize * border_width_variable); // Translate integer pixel width to floating point
 	float2 within_border = saturate((-texcoord * texcoord + texcoord) - (-border * border + border)); // Becomes positive when inside the border and zero when outside
 
-	return all(within_border) ? color : border_color;
-}
-
-technique Border
-{
-	pass
-	{
-		VertexShader = PostProcessVS;
-		PixelShader = BorderPass;
-	}
+	return lerp(border_color, color, float(all(within_border)));
 }
