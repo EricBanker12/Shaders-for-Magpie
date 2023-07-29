@@ -2,6 +2,8 @@
 This is a repository for shaders I have ported for compatibility with [Magpie](https://github.com/Blinue/Magpie), a lightweight window scaling tool which enhances game graphics and enables non-fullscreen games to display in fullscreen mode.
 
 ## Shaders
+- [prod80-ReShade-Repository](https://github.com/prod80/prod80-ReShade-Repository) -  by [prod80](https://github.com/prod80)
+  - PD80_02_Bloom - Adds customizeable bloom with eye adaptation.
 - [SweetFX](https://github.com/CeeJayDK/SweetFX) - by [CeeJayDK](https://github.com/CeeJayDK)
   - ASCII.hlsl - Convert image into ASCII art.
   - Border.hlsl - Add Borders to top/bottom of the image.
